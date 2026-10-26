@@ -810,17 +810,25 @@
     }
   }
 
-  async function pushToServer() {
+  async function pushToServer(deltaOp = null) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(bookingsDB));
     refreshAllViews();
     try {
+      const payload = deltaOp
+        ? { delta: deltaOp, bookings: bookingsDB }
+        : { bookings: bookingsDB, replaceAll: true };
       const res = await fetch(getSyncEndpoint(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookings: bookingsDB })
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
         const resp = await res.json();
+        if (resp.bookings) {
+          bookingsDB = resp.bookings;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(bookingsDB));
+          refreshAllViews();
+        }
         lastUpdatedAt = resp.updatedAt || Date.now();
         updateSyncBadge(true);
       }
@@ -1193,7 +1201,7 @@
       return;
     }
     const key = `${currentEdit.dateStr}_${currentEdit.court}_${currentEdit.slotId}`;
-    bookingsDB[key] = {
+    const item = {
       customer,
       phone: document.getElementById("fPhone").value.trim(),
       type: document.getElementById("fType").value,
@@ -1202,7 +1210,8 @@
       extraPrice: Number(document.getElementById("fExtraPrice").value || 0),
       note: document.getElementById("fNote").value.trim()
     };
-    pushToServer();
+    bookingsDB[key] = item;
+    pushToServer({ set: { [key]: item } });
     closeModal();
   }
 
@@ -1210,7 +1219,7 @@
     const key = `${currentEdit.dateStr}_${currentEdit.court}_${currentEdit.slotId}`;
     if (bookingsDB[key]) {
       delete bookingsDB[key];
-      pushToServer();
+      pushToServer({ delete: [key] });
     }
     closeModal();
   }
@@ -1239,6 +1248,7 @@
     const [year, month] = ym.split("-").map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
     let countCreated = 0;
+    const batchSet = {};
 
     for (let d = 1; d <= daysInMonth; d++) {
       const dt = new Date(year, month - 1, d);
@@ -1246,7 +1256,7 @@
         const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
         slotsChecked.forEach(slotId => {
           const key = `${dateStr}_${court}_${slotId}`;
-          bookingsDB[key] = {
+          const item = {
             customer,
             phone,
             type,
@@ -1255,12 +1265,14 @@
             extraPrice: 0,
             note: "Lịch cố định tháng"
           };
+          bookingsDB[key] = item;
+          batchSet[key] = item;
           countCreated++;
         });
       }
     }
 
-    pushToServer();
+    pushToServer({ set: batchSet });
     document.getElementById("monthSelector").value = ym;
     switchTab("monthly");
     alert(`Đã tạo ${countCreated} ca đặt sân cố định cho "${customer}" trong tháng ${month}/${year}!`);

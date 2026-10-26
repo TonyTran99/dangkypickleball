@@ -122,14 +122,32 @@ function requestHandler(req, res) {
   }
 
   if (urlObj.pathname === '/api/data' && req.method === 'POST') {
-    if (req.body && typeof req.body === 'object') {
+    const processPost = (incoming) => {
+      const current = readDB();
+      let mergedBookings = Object.assign({}, current.bookings || {});
+      if (incoming.replaceAll) {
+        mergedBookings = incoming.bookings || {};
+      } else if (incoming.delta) {
+        if (incoming.delta.set) {
+          Object.assign(mergedBookings, incoming.delta.set);
+        }
+        if (Array.isArray(incoming.delta.delete)) {
+          incoming.delta.delete.forEach(k => { delete mergedBookings[k]; });
+        }
+      } else if (incoming.bookings) {
+        Object.assign(mergedBookings, incoming.bookings);
+      }
       const payload = {
         updatedAt: Date.now(),
-        bookings: req.body.bookings || {}
+        bookings: mergedBookings
       };
       writeDB(payload);
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ ok: true, updatedAt: payload.updatedAt }));
+      res.end(JSON.stringify({ ok: true, updatedAt: payload.updatedAt, bookings: mergedBookings }));
+    };
+
+    if (req.body && typeof req.body === 'object') {
+      processPost(req.body);
       return;
     }
 
@@ -138,13 +156,7 @@ function requestHandler(req, res) {
     req.on('end', () => {
       try {
         const incoming = JSON.parse(body || '{}');
-        const payload = {
-          updatedAt: Date.now(),
-          bookings: incoming.bookings || {}
-        };
-        writeDB(payload);
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ ok: true, updatedAt: payload.updatedAt }));
+        processPost(incoming);
       } catch (e) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: e.message }));
