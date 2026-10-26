@@ -768,6 +768,7 @@
 
   const STORAGE_KEY = "PICKLEBALL_2COURTS_DB_V1";
   const CLOUD_URL_KEY = "PICKLEBALL_CLOUD_API_URL";
+  const DEFAULT_CLOUD_URL = "https://script.google.com/macros/s/AKfycbzVxTzeWJnNp3I4oQrJAnZnHM39ZD9cNRajjFViLJpIfaiiBRMVqtnxW4y2H8SljU02/exec";
   const isViewOnly = new URLSearchParams(window.location.search).get("mode") === "view";
 
   let bookingsDB = {};
@@ -786,8 +787,7 @@
   function getSyncEndpoint() {
     const customUrl = localStorage.getItem(CLOUD_URL_KEY);
     if (customUrl && customUrl.startsWith("http")) return customUrl;
-    if (window.location.protocol.startsWith("http")) return "/api/data";
-    return "http://localhost:3000/api/data";
+    return DEFAULT_CLOUD_URL;
   }
 
   async function pullFromServer() {
@@ -819,7 +819,7 @@
         : { bookings: bookingsDB, replaceAll: true };
       const res = await fetch(getSyncEndpoint(), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
       if (res.ok) {
@@ -840,10 +840,10 @@
   function updateSyncBadge(online) {
     const badge = document.getElementById("syncStatusBadge");
     if (online) {
-      badge.innerHTML = "🟢 Đã đồng bộ Đa thiết bị";
-      badge.style.background = "rgba(34,197,94,0.3)";
+      badge.innerHTML = "☁️ Đã đồng bộ Google Cloud Vĩnh Viễn";
+      badge.style.background = "rgba(34,197,94,0.32)";
     } else {
-      badge.innerHTML = "💾 Lưu trên máy này";
+      badge.innerHTML = "💾 Lưu tạm trên máy";
       badge.style.background = "rgba(255,255,255,0.2)";
     }
   }
@@ -899,7 +899,7 @@
 
     loadLocalFallback();
     document.getElementById("dailyDatePicker").value = "2026-10-26";
-    document.getElementById("cloudApiInput").value = localStorage.getItem(CLOUD_URL_KEY) || "";
+    document.getElementById("cloudApiInput").value = localStorage.getItem(CLOUD_URL_KEY) || DEFAULT_CLOUD_URL;
 
     const recSlots = document.getElementById("recSlotsGroup");
     recSlots.innerHTML = TIME_SLOTS.map(s =>
