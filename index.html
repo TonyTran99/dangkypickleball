@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Sân Pickleball" />
+  <title>Quản Lý 2 Sân Pickleball Online</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #0f766e;
+      --primary-hover: #115e59;
+      --accent: #2563eb;
+      --st-empty: #ffffff;
+      --st-pending-bg: #fef9c3;
+      --st-pending-tx: #854d0e;
+      --st-confirmed-bg: #dbeafe;
+      --st-confirmed-tx: #1e40af;
+      --st-playing-bg: #dcfce7;
+      --st-playing-tx: #166534;
+      --st-paid-bg: #f1f5f9;
+      --st-paid-tx: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      padding-bottom: 70px;
+    }
+    header {
+      background: linear-gradient(135deg, #0f766e, #0369a1);
+      color: #fff;
+      padding: 14px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand h1 { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .brand p { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+    .sync-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    .nav-tabs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .tab-btn {
+      background: rgba(255,255,255,0.16);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 7px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { background: rgba(255,255,255,0.28); }
+    .tab-btn.active {
+      background: #ffffff;
+      color: #0f766e;
+      border-color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+    .btn-share-top {
+      background: #f59e0b;
+      color: #fff;
+      border: none;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+    .container { max-width: 1440px; margin: 14px auto; padding: 0 12px; }
+
+    /* KPI Strip */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+    .kpi-val { font-size: 19px; font-weight: 800; margin-top: 3px; color: var(--text); }
+    .kpi-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+    /* Toolbar */
+    .toolbar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .toolbar-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 7px 11px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-sm { padding: 4px 8px; font-size: 12px; }
+    input[type="date"], select, input[type="text"], input[type="number"] {
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    /* Mobile Court Filter */
+    .mobile-court-switch {
+      display: none;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .mobile-court-switch button {
+      flex: 1;
+      padding: 9px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+    }
+    .mobile-court-switch button.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* Legend */
+    .legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; align-items: center; }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .dot { width: 11px; height: 11px; border-radius: 3px; display: inline-block; border: 1px solid rgba(0,0,0,0.15); }
+
+    /* Courts Grid */
+    .courts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 900px) {
+      .courts-grid { grid-template-columns: 1fr; }
+      .mobile-court-switch { display: flex; }
+      .brand p { display: none; }
+    }
+    .court-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .court-header {
+      padding: 11px 14px;
+      font-weight: 700;
+      font-size: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .court-1 .court-header { background: #ecfdf5; color: #065f46; }
+    .court-2 .court-header { background: #eff6ff; color: #1e40af; }
+
+    table.slot-table { width: 100%; border-collapse: collapse; }
+    table.slot-table th, table.slot-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    table.slot-table th { background: #f8fafc; color: var(--muted); font-weight: 600; font-size: 11.5px; }
+    .slot-row { transition: background 0.12s; cursor: pointer; }
+    .slot-row:hover { filter: brightness(0.97); }
+    .st-pending { background: var(--st-pending-bg); color: var(--st-pending-tx); }
+    .st-confirmed { background: var(--st-confirmed-bg); color: var(--st-confirmed-tx); }
+    .st-playing { background: var(--st-playing-bg); color: var(--st-playing-tx); font-weight: 600; }
+    .st-paid { background: var(--st-paid-bg); color: var(--st-paid-tx); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 99px;
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+    .badge-regular { background: #e0f2fe; color: #0369a1; }
+    .badge-coach-tx { background: #f3e8ff; color: #6d28d9; }
+    .badge-coach-ktx { background: #fae8ff; color: #a21caf; }
+
+    .call-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 5px;
+      padding: 1px 6px;
+      font-size: 11px;
+      color: #0f766e;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    /* Monthly Matrix View */
+    .matrix-wrapper {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .matrix-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    table.matrix-table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 1100px;
+      font-size: 11.5px;
+    }
+    table.matrix-table th, table.matrix-table td {
+      border: 1px solid #cbd5e1;
+      padding: 4px 3px;
+      text-align: center;
+      height: 28px;
+      min-width: 33px;
+    }
+    table.matrix-table th { background: #f1f5f9; font-weight: 700; }
+    table.matrix-table th.weekend { background: #fee2e2; color: #b91c1c; }
+    table.matrix-table td.slot-name { font-weight: 700; background: #f8fafc; min-width: 70px; white-space: nowrap; position: sticky; left: 0; z-index: 3; }
+    table.matrix-table td.slot-price { font-weight: 700; color: #b45309; background: #fffbeb; min-width: 42px; }
+    table.matrix-table td.cell-slot {
+      cursor: pointer;
+      max-width: 56px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 11px;
+    }
+    table.matrix-table td.sum-col { background: #f0fdf4; font-weight: 700; color: #166534; min-width: 50px; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 12px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 12px;
+      max-width: 540px;
+      width: 100%;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      max-height: 92vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+    .modal-header h3 { font-size: 16px; }
+    .form-row { margin-bottom: 11px; }
+    .form-row label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; color: #334155; }
+    .form-row input, .form-row select { width: 100%; }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 500px) { .form-grid-2 { grid-template-columns: 1fr; } }
+    .quick-items { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .quick-chip {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12.5px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .quick-chip:active { background: #cbd5e1; }
+    .total-box {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin: 12px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .total-box .amt { font-size: 19px; font-weight: 800; color: #166534; }
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+    .checkbox-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .checkbox-pill {
+      display: flex; align-items: center; gap: 5px;
+      background: #f8fafc; border: 1px solid #cbd5e1;
+      padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    }
+    .readonly-banner {
+      display: none;
+      background: #eff6ff;
+      border-bottom: 1px solid #bfdbfe;
+      color: #1e40af;
+      padding: 8px 16px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<div class="readonly-banner" id="readonlyBanner">
+  👀 Bạn đang ở chế độ <b>Xem Lịch Trống Online</b>. Liên hệ chủ sân để đặt khung giờ còn trống!
+</div>
+
+<header>
+  <div class="brand">
+    <h1>
+      🏓 QUẢN LÝ 2 SÂN PICKLEBALL
+      <span class="sync-badge" id="syncStatusBadge">⚡ Đang kiểm tra kết nối...</span>
+    </h1>
+    <p>Hỗ trợ Điện thoại & Máy tính • Tự động tính giá khung giờ & Thầy dạy</p>
+  </div>
+  <div class="nav-tabs" id="mainNavTabs">
+    <button class="tab-btn active" onclick="switchTab('daily')">📅 Lịch Ngày</button>
+    <button class="tab-btn" onclick="switchTab('monthly')">📊 Bảng Tháng</button>
+    <button class="tab-btn admin-only" onclick="switchTab('recurring')">🔁 Đặt Cố Định</button>
+    <button class="tab-btn admin-only" onclick="switchTab('report')">💰 Báo Cáo</button>
+    <button class="btn-share-top admin-only" onclick="openShareModal()">📱 Kết nối Điện thoại / Link Web</button>
+  </div>
+</header>
+
+<div class="container">
+  <!-- KPI STRIP -->
+  <div class="kpi-grid" id="kpiStrip">
+    <div class="kpi-card admin-only">
+      <div class="kpi-label">Doanh thu Ngày đang chọn</div>
+      <div class="kpi-val" id="kpiDayRev">0k</div>
+      <div class="kpi-sub" id="kpiDaySub">Tiền sân: 0k | Dịch vụ: 0k</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Trạng thái Sân trong ngày</div>
+      <div class="kpi-val" id="kpiDaySlots">0 / 26 ca</div>
+      <div class="kpi-sub" id="kpiDayPlaying">Đang đánh: 0 sân</div>
+    </div>
+    <div class="kpi-card admin-only">
+      <div class="kpi-label">Tổng Doanh thu Tháng</div>
+      <div class="kpi-val" id="kpiMonthRev">0k</div>
+      <div class="kpi-sub" id="kpiMonthSub">Sân 1: 0k | Sân 2: 0k</div>
+    </div>
+    <div class="kpi-card admin-only">
+      <div class="kpi-label">Đã thu / Chưa thu (Ngày)</div>
+      <div class="kpi-val" id="kpiPaidStatus">0k / 0k</div>
+      <div class="kpi-sub">Chạm vào ca chơi để cập nhật</div>
+    </div>
+  </div>
+
+  <!-- TAB 1: DAILY OPERATIONS -->
+  <div id="tab-daily" class="view-section active">
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <button class="btn" onclick="changeDay(-1)">◀</button>
+        <input type="date" id="dailyDatePicker" onchange="onDailyDateChange()" />
+        <button class="btn" onclick="changeDay(1)">▶</button>
+        <button class="btn btn-primary" onclick="goToday()">Hôm nay</button>
+        <span id="dailyDayOfWeek" style="font-weight:700; color:#0f766e; margin-left:4px; font-size:13.5px;"></span>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="dot" style="background:#fff"></span> Trống</span>
+        <span class="legend-item"><span class="dot" style="background:var(--st-pending-bg)"></span> Chờ cọc</span>
+        <span class="legend-item"><span class="dot" style="background:var(--st-confirmed-bg)"></span> Đã đặt</span>
+        <span class="legend-item"><span class="dot" style="background:var(--st-playing-bg)"></span> Đang đánh</span>
+        <span class="legend-item"><span class="dot" style="background:var(--st-paid-bg)"></span> Đã thu</span>
+      </div>
+    </div>
+
+    <!-- Mobile Quick Court Switcher -->
+    <div class="mobile-court-switch">
+      <button class="active" id="mobBtnAll" onclick="setMobileCourtFilter(0)">Cả 2 Sân</button>
+      <button id="mobBtn1" onclick="setMobileCourtFilter(1)">🟢 Sân 1</button>
+      <button id="mobBtn2" onclick="setMobileCourtFilter(2)">🔵 Sân 2</button>
+    </div>
+
+    <div class="courts-grid">
+      <div class="court-panel court-1" id="panelCourt1">
+        <div class="court-header">
+          <span>🟢 SÂN 1</span>
+          <span id="court1DaySummary">0 ca</span>
+        </div>
+        <table class="slot-table">
+          <thead>
+            <tr>
+              <th style="width:84px">Giờ</th>
+              <th style="width:50px">Giá</th>
+              <th>Khách / Ghi chú</th>
+              <th style="width:74px" class="admin-only">Tổng</th>
+              <th style="width:98px">Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody id="court1DailyBody"></tbody>
+        </table>
+      </div>
+
+      <div class="court-panel court-2" id="panelCourt2">
+        <div class="court-header">
+          <span>🔵 SÂN 2</span>
+          <span id="court2DaySummary">0 ca</span>
+        </div>
+        <table class="slot-table">
+          <thead>
+            <tr>
+              <th style="width:84px">Giờ</th>
+              <th style="width:50px">Giá</th>
+              <th>Khách / Ghi chú</th>
+              <th style="width:74px" class="admin-only">Tổng</th>
+              <th style="width:98px">Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody id="court2DailyBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: MONTHLY MATRIX -->
+  <div id="tab-monthly" class="view-section">
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <label style="font-weight:700">Tháng:</label>
+        <select id="monthSelector" onchange="renderMonthlyMatrix()">
+          <option value="2026-10">Tháng 10 - 2026</option>
+          <option value="2026-11">Tháng 11 - 2026</option>
+          <option value="2026-12">Tháng 12 - 2026</option>
+          <option value="2027-01">Tháng 01 - 2027</option>
+        </select>
+        <button class="btn btn-primary admin-only" onclick="exportMonthlyExcel()">📥 Xuất File Excel (.xls)</button>
+      </div>
+      <div style="font-size:12px; color:var(--muted)">
+        💡 Chạm vào ô bất kỳ trên bảng 31 ngày để đặt lịch hoặc sửa nhanh.
+      </div>
+    </div>
+
+    <div class="matrix-wrapper">
+      <div class="matrix-title">
+        <span id="matrixTitle1">LỊCH ĐÁNH PICKLEBALL SÂN 1</span>
+        <span id="matrixSum1" class="admin-only" style="color:#0f766e"></span>
+      </div>
+      <table class="matrix-table" id="matrixTable1"></table>
+    </div>
+
+    <div class="matrix-wrapper">
+      <div class="matrix-title">
+        <span id="matrixTitle2">LỊCH ĐÁNH PICKLEBALL SÂN 2</span>
+        <span id="matrixSum2" class="admin-only" style="color:#1e40af"></span>
+      </div>
+      <table class="matrix-table" id="matrixTable2"></table>
+    </div>
+  </div>
+
+  <!-- TAB 3: RECURRING BOOKING -->
+  <div id="tab-recurring" class="view-section">
+    <div class="court-panel" style="max-width:760px; margin:0 auto; padding:18px;">
+      <h3 style="margin-bottom:6px;">🔁 Đặt Lịch Cố Định Tháng / Lịch Thầy Dạy</h3>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:14px;">
+        Điền tự động lịch khách cố định (VD: Thứ 2 - 4 - 6 cả tháng) chỉ bằng 1 chạm.
+      </p>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label>Tháng áp dụng</label>
+          <select id="recMonth">
+            <option value="2026-10">Tháng 10/2026</option>
+            <option value="2026-11">Tháng 11/2026</option>
+            <option value="2026-12">Tháng 12/2026</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Chọn Sân</label>
+          <select id="recCourt">
+            <option value="1">Sân 1</option>
+            <option value="2">Sân 2</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label>Tên Khách / CLB / Thầy dạy</label>
+          <input type="text" id="recCustomer" placeholder="VD: CLB Bình Minh hoặc Thầy Hùng" />
+        </div>
+        <div class="form-row">
+          <label>Số điện thoại</label>
+          <input type="text" id="recPhone" placeholder="VD: 0909..." />
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label>Phân loại tính giá</label>
+          <select id="recType">
+            <option value="regular">Khách đánh thường (Theo giá khung giờ)</option>
+            <option value="coach_tx">Thầy dạy thường xuyên (5h-17h: 50k | 17h-21h: 90k)</option>
+            <option value="coach_ktx">Thầy không thường xuyên (5h-17h: 70k | 17h-21h: 100k)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Trạng thái</label>
+          <select id="recStatus">
+            <option value="confirmed">Đã xác nhận / Khách cố định</option>
+            <option value="pending">Chờ cọc</option>
+            <option value="paid">Đã thu tiền cả tháng</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>Các Thứ trong tuần lặp lại:</label>
+        <div class="checkbox-group" id="recDaysGroup">
+          <label class="checkbox-pill"><input type="checkbox" value="1" checked /> Thứ 2</label>
+          <label class="checkbox-pill"><input type="checkbox" value="2" /> Thứ 3</label>
+          <label class="checkbox-pill"><input type="checkbox" value="3" checked /> Thứ 4</label>
+          <label class="checkbox-pill"><input type="checkbox" value="4" /> Thứ 5</label>
+          <label class="checkbox-pill"><input type="checkbox" value="5" checked /> Thứ 6</label>
+          <label class="checkbox-pill"><input type="checkbox" value="6" /> Thứ 7</label>
+          <label class="checkbox-pill"><input type="checkbox" value="0" /> CN</label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>Chọn Khung giờ:</label>
+        <div class="checkbox-group" id="recSlotsGroup"></div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <button class="btn btn-primary" style="width:100%; padding:11px;" onclick="applyRecurringBooking()">✅ Tạo Lịch Cố Định Cho Cả Tháng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: REPORT & CLOUD SYNC -->
+  <div id="tab-report" class="view-section">
+    <div class="courts-grid">
+      <div class="court-panel" style="padding:16px;">
+        <h3 style="margin-bottom:8px;">💰 Bảng Tổng Hợp Doanh Thu Quý 4/2026</h3>
+        <div id="quarterReportBox" style="margin-bottom:14px;"></div>
+        <h4 style="margin-bottom:6px; font-size:14px;">Quy tắc giá đang áp dụng tự động:</h4>
+        <ul style="font-size:12.5px; padding-left:18px; line-height:1.6; color:#334155;">
+          <li><b>5h-6h:</b> 70k | <b>6h-8h:</b> 100k | <b>8h-9h:</b> 80k | <b>9h-15h:</b> 70k</li>
+          <li><b>15h-16h:</b> 80k | <b>16h-17h:</b> 90k | <b>17h-20h:</b> 100k | <b>20h-21h:</b> 90k</li>
+          <li><b style="color:#6d28d9">Thầy dạy 5h-17h:</b> 50k (Thường xuyên) / 70k (Không TX)</li>
+          <li><b style="color:#6d28d9">Thầy dạy 17h-21h:</b> 90k (Thường xuyên) / 100k (Không TX)</li>
+        </ul>
+      </div>
+
+      <div class="court-panel" style="padding:16px;">
+        <h3 style="margin-bottom:8px;">☁️ Đồng Bộ Đám Mây & Sao Lưu Dữ Liệu</h3>
+        <p style="font-size:12.5px; color:var(--muted); margin-bottom:12px;">
+          Nếu bạn có đường link Google Apps Script / Cloud API riêng, dán vào dưới đây để đồng bộ giữa các máy qua 4G:
+        </p>
+        <div class="form-row">
+          <label>Link Cloud Sync API (Tùy chọn):</label>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="cloudApiInput" placeholder="https://script.google.com/macros/s/.../exec" />
+            <button class="btn btn-primary" onclick="saveCloudApiUrl()">Lưu</button>
+          </div>
+        </div>
+        <hr style="border:none; border-top:1px solid var(--border); margin:14px 0;" />
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="exportBackupJson()">⬇️ Tải File Sao Lưu (.json)</button>
+          <button class="btn" onclick="document.getElementById('importFile').click()">⬆️ Khôi Phục (.json)</button>
+          <input type="file" id="importFile" style="display:none" accept=".json" onchange="importBackupJson(event)" />
+          <button class="btn" style="color:#dc2626; border-color:#fca5a5" onclick="clearAllData()">🗑️ Xóa dữ liệu mẫu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOOKING MODAL -->
+<div class="modal-backdrop" id="bookingModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Đặt Sân</h3>
+      <button class="btn btn-sm" onclick="closeModal()">✕ Đóng</button>
+    </div>
+
+    <div class="form-grid-2">
+      <div class="form-row">
+        <label>Tên Khách hàng / Thầy dạy *</label>
+        <input type="text" id="fCustomer" placeholder="VD: Anh Tuấn / Thầy Hùng" />
+      </div>
+      <div class="form-row">
+        <label>Số điện thoại (Có thể bấm gọi trên ĐT)</label>
+        <input type="text" id="fPhone" placeholder="VD: 0909..." />
+      </div>
+    </div>
+
+    <div class="form-grid-2">
+      <div class="form-row">
+        <label>Đối tượng tính giá</label>
+        <select id="fType" onchange="recalcModalPrice()">
+          <option value="regular">Khách đánh thường (Theo khung giờ)</option>
+          <option value="coach_tx">Thầy dạy thường xuyên (50k / 90k)</option>
+          <option value="coach_ktx">Thầy không thường xuyên (70k / 100k)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Trạng thái ca chơi</label>
+        <select id="fStatus">
+          <option value="confirmed">🔵 Đã đặt / Đã xác nhận</option>
+          <option value="pending">🟡 Chờ chuyển cọc</option>
+          <option value="playing">🟢 Đang đánh trên sân</option>
+          <option value="paid">⚫ Đã thu tiền xong</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-grid-2">
+      <div class="form-row">
+        <label>Tiền sân (Nghìn đồng)</label>
+        <input type="number" id="fCourtPrice" oninput="updateModalTotal()" />
+      </div>
+      <div class="form-row">
+        <label>Tiền Nước / Vợt / Phụ thu (Nghìn đ)</label>
+        <input type="number" id="fExtraPrice" value="0" oninput="updateModalTotal()" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>Cộng nhanh dịch vụ tại sân (1 chạm):</label>
+      <div class="quick-items">
+        <span class="quick-chip" onclick="addQuickExtra(10, 'Nước suối')">+ Nước suối (10k)</span>
+        <span class="quick-chip" onclick="addQuickExtra(15, 'Revive')">+ Revive (15k)</span>
+        <span class="quick-chip" onclick="addQuickExtra(20, 'Thuê vợt')">+ Thuê vợt (20k)</span>
+        <span class="quick-chip" onclick="addQuickExtra(30, 'Bóng')">+ Bóng (30k)</span>
+        <span class="quick-chip" onclick="resetQuickExtra()" style="color:#dc2626">Xóa DV (0k)</span>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>Ghi chú (Tiền cọc, nước uống, chuyển khoản...)</label>
+      <input type="text" id="fNote" placeholder="VD: Đã cọc 50k, lấy 2 Revive..." />
+    </div>
+
+    <div class="total-box">
+      <div>
+        <div style="font-size:11.5px; color:#166534; font-weight:700;">TỔNG THANH TOÁN CA NÀY</div>
+        <div style="font-size:12px; color:var(--muted);" id="modalFormulaText">Tiền sân + Dịch vụ</div>
+      </div>
+      <div class="amt" id="modalTotalAmt">0k</div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; gap:8px; margin-top:12px;">
+      <button class="btn" style="color:#dc2626; border-color:#fca5a5" onclick="deleteCurrentBooking()">🗑️ Trả trống</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn" onclick="closeModal()">Đóng</button>
+        <button class="btn btn-primary" onclick="saveModalBooking()">💾 Lưu Lịch</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE / MOBILE QR MODAL -->
+<div class="modal-backdrop" id="shareModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📱 Mở Trên Điện Thoại & Chia Sẻ Cho Nhiều Người</h3>
+      <button class="btn btn-sm" onclick="closeShareModal()">✕ Đóng</button>
+    </div>
+    <div style="font-size:13px; line-height:1.55; color:#334155;">
+      <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:12px; margin-bottom:12px;">
+        <div style="font-weight:700; color:#166534; margin-bottom:4px;">1️⃣ Link Quản lý (Dành cho Bạn & Nhân viên trực sân):</div>
+        <p style="font-size:12px; margin-bottom:6px;">Dùng điện thoại quét mã QR dưới đây hoặc gửi link qua Zalo để cùng nhập số liệu, đặt sân và thu tiền:</p>
+        <input type="text" id="shareAdminUrl" readonly onclick="this.select()" style="font-weight:700; color:#0f766e; background:#fff; margin-bottom:8px;" />
+        <div style="text-align:center;">
+          <img id="qrAdminImg" alt="QR Admin" style="width:160px; height:160px; border:1px solid #cbd5e1; border-radius:8px; padding:4px; background:#fff;" />
+        </div>
+      </div>
+
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px;">
+        <div style="font-weight:700; color:#1e40af; margin-bottom:4px;">2️⃣ Link Chỉ Xem Lịch Trống (Gửi vào nhóm Zalo Khách hàng):</div>
+        <p style="font-size:12px; margin-bottom:6px;">Khách bấm vào chỉ xem được giờ nào còn trống / đã đặt (Tự động ẩn doanh thu & SĐT khách khác):</p>
+        <input type="text" id="shareViewUrl" readonly onclick="this.select()" style="font-weight:700; color:#1e40af; background:#fff;" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const TIME_SLOTS = [
+    { id: 0, label: "5h - 6h", stdPrice: 70, period: "day" },
+    { id: 1, label: "6h - 7h", stdPrice: 100, period: "day" },
+    { id: 2, label: "7h - 8h", stdPrice: 100, period: "day" },
+    { id: 3, label: "8h - 9h", stdPrice: 80, period: "day" },
+    { id: 4, label: "9h - 10h", stdPrice: 70, period: "day" },
+    { id: 5, label: "10h - 14h", stdPrice: 70, period: "day" },
+    { id: 6, label: "14h - 15h", stdPrice: 70, period: "day" },
+    { id: 7, label: "15h - 16h", stdPrice: 80, period: "day" },
+    { id: 8, label: "16h - 17h", stdPrice: 90, period: "day" },
+    { id: 9, label: "17h - 18h", stdPrice: 100, period: "night" },
+    { id: 10, label: "18h - 19h", stdPrice: 100, period: "night" },
+    { id: 11, label: "19h - 20h", stdPrice: 100, period: "night" },
+    { id: 12, label: "20h - 21h", stdPrice: 90, period: "night" }
+  ];
+
+  const STORAGE_KEY = "PICKLEBALL_2COURTS_DB_V1";
+  const CLOUD_URL_KEY = "PICKLEBALL_CLOUD_API_URL";
+  const isViewOnly = new URLSearchParams(window.location.search).get("mode") === "view";
+
+  let bookingsDB = {};
+  let lastUpdatedAt = 0;
+  let serverOnline = false;
+  let serverInfo = null;
+  let currentEdit = { dateStr: "", court: 1, slotId: 0 };
+
+  function getDefaultPrice(slotId, type) {
+    const slot = TIME_SLOTS[slotId];
+    if (type === "coach_tx") return slot.period === "day" ? 50 : 90;
+    if (type === "coach_ktx") return slot.period === "day" ? 70 : 100;
+    return slot.stdPrice;
+  }
+
+  function getSyncEndpoint() {
+    const customUrl = localStorage.getItem(CLOUD_URL_KEY);
+    if (customUrl && customUrl.startsWith("http")) return customUrl;
+    if (window.location.protocol.startsWith("http")) return "/api/data";
+    return "http://localhost:3000/api/data";
+  }
+
+  async function pullFromServer() {
+    try {
+      const res = await fetch(getSyncEndpoint(), { cache: "no-store" });
+      if (!res.ok) throw new Error("Offline");
+      const data = await res.json();
+      serverOnline = true;
+      if (data.serverInfo) serverInfo = data.serverInfo;
+      if (data.bookings && (!lastUpdatedAt || data.updatedAt >= lastUpdatedAt)) {
+        bookingsDB = data.bookings;
+        lastUpdatedAt = data.updatedAt || Date.now();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(bookingsDB));
+        refreshAllViews();
+      }
+      updateSyncBadge(true);
+    } catch (e) {
+      serverOnline = false;
+      updateSyncBadge(false);
+    }
+  }
+
+  async function pushToServer() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(bookingsDB));
+    refreshAllViews();
+    try {
+      const res = await fetch(getSyncEndpoint(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookings: bookingsDB })
+      });
+      if (res.ok) {
+        const resp = await res.json();
+        lastUpdatedAt = resp.updatedAt || Date.now();
+        updateSyncBadge(true);
+      }
+    } catch (e) {
+      updateSyncBadge(false);
+    }
+  }
+
+  function updateSyncBadge(online) {
+    const badge = document.getElementById("syncStatusBadge");
+    if (online) {
+      badge.innerHTML = "🟢 Đã đồng bộ Đa thiết bị";
+      badge.style.background = "rgba(34,197,94,0.3)";
+    } else {
+      badge.innerHTML = "💾 Lưu trên máy này";
+      badge.style.background = "rgba(255,255,255,0.2)";
+    }
+  }
+
+  function loadLocalFallback() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try { bookingsDB = JSON.parse(raw); } catch (e) { bookingsDB = {}; }
+    } else {
+      const today = "2026-10-26";
+      bookingsDB = {
+        [`${today}_1_1`]: {
+          customer: "CLB Sáng Sớm", phone: "0903111222", type: "regular",
+          status: "paid", courtPrice: 100, extraPrice: 30, note: "2 Nước suối, 1 Revive"
+        },
+        [`${today}_1_7`]: {
+          customer: "Thầy Hùng", phone: "0918222333", type: "coach_tx",
+          status: "playing", courtPrice: 50, extraPrice: 15, note: "Thầy dạy thường xuyên + 1 Revive"
+        },
+        [`${today}_1_9`]: {
+          customer: "Anh Tuấn", phone: "0909888777", type: "regular",
+          status: "confirmed", courtPrice: 100, extraPrice: 0, note: "Khách quen T2-4-6"
+        },
+        [`${today}_2_2`]: {
+          customer: "Chị Lan", phone: "0988777666", type: "regular",
+          status: "paid", courtPrice: 100, extraPrice: 40, note: "Thuê 2 vợt"
+        },
+        [`${today}_2_10`]: {
+          customer: "Thầy Nam", phone: "0977555444", type: "coach_ktx",
+          status: "pending", courtPrice: 100, extraPrice: 0, note: "Thầy dạy vãng lai"
+        }
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(bookingsDB));
+    }
+  }
+
+  function getDayNameVN(dateStr) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    return ["Chủ Nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"][dt.getDay()];
+  }
+
+  function getShortDayVN(y, m, d) {
+    const dt = new Date(y, m - 1, d);
+    return ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][dt.getDay()];
+  }
+
+  function initApp() {
+    if (isViewOnly) {
+      document.getElementById("readonlyBanner").style.display = "block";
+      document.querySelectorAll(".admin-only").forEach(el => el.style.display = "none");
+    }
+
+    loadLocalFallback();
+    document.getElementById("dailyDatePicker").value = "2026-10-26";
+    document.getElementById("cloudApiInput").value = localStorage.getItem(CLOUD_URL_KEY) || "";
+
+    const recSlots = document.getElementById("recSlotsGroup");
+    recSlots.innerHTML = TIME_SLOTS.map(s =>
+      `<label class="checkbox-pill"><input type="checkbox" value="${s.id}" ${s.id === 9 ? "checked" : ""}/> ${s.label} (${s.stdPrice}k)</label>`
+    ).join("");
+
+    refreshAllViews();
+    pullFromServer();
+    setInterval(() => {
+      if (!document.getElementById("bookingModal").classList.contains("open")) {
+        pullFromServer();
+      }
+    }, 3000);
+  }
+
+  function setMobileCourtFilter(courtNum) {
+    document.getElementById("mobBtnAll").classList.toggle("active", courtNum === 0);
+    document.getElementById("mobBtn1").classList.toggle("active", courtNum === 1);
+    document.getElementById("mobBtn2").classList.toggle("active", courtNum === 2);
+    document.getElementById("panelCourt1").style.display = (courtNum === 0 || courtNum === 1) ? "block" : "none";
+    document.getElementById("panelCourt2").style.display = (courtNum === 0 || courtNum === 2) ? "block" : "none";
+  }
+
+  function switchTab(tabId) {
+    document.querySelectorAll(".view-section").forEach(el => el.classList.remove("active"));
+    document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+    document.getElementById("tab-" + tabId).classList.add("active");
+    const mapIdx = { daily: 0, monthly: 1, recurring: 2, report: 3 };
+    const btns = document.querySelectorAll(".tab-btn");
+    if (btns[mapIdx[tabId]]) btns[mapIdx[tabId]].classList.add("active");
+    refreshAllViews();
+  }
+
+  function onDailyDateChange() {
+    const val = document.getElementById("dailyDatePicker").value;
+    if (val) {
+      const ym = val.substring(0, 7);
+      const monthSel = document.getElementById("monthSelector");
+      if ([...monthSel.options].some(o => o.value === ym)) monthSel.value = ym;
+    }
+    refreshAllViews();
+  }
+
+  function changeDay(delta) {
+    const picker = document.getElementById("dailyDatePicker");
+    const [y, m, d] = picker.value.split("-").map(Number);
+    const dt = new Date(y, m - 1, d + delta);
+    picker.value = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    onDailyDateChange();
+  }
+
+  function goToday() {
+    const now = new Date();
+    document.getElementById("dailyDatePicker").value =
+      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    onDailyDateChange();
+  }
+
+  function statusLabel(st) {
+    switch (st) {
+      case "pending": return "🟡 Chờ cọc";
+      case "confirmed": return "🔵 Đã đặt";
+      case "playing": return "🟢 Đang đánh";
+      case "paid": return "⚫ Đã thu";
+      default: return "⚪ Trống";
+    }
+  }
+
+  function typeBadge(type) {
+    if (type === "coach_tx") return `<span class="badge badge-coach-tx">Thầy TX</span>`;
+    if (type === "coach_ktx") return `<span class="badge badge-coach-ktx">Thầy KTX</span>`;
+    return `<span class="badge badge-regular">Khách</span>`;
+  }
+
+  function renderDailyView() {
+    const dateStr = document.getElementById("dailyDatePicker").value;
+    const [y, m, d] = dateStr.split("-");
+    document.getElementById("dailyDayOfWeek").textContent = `${getDayNameVN(dateStr)} (${d}/${m}/${y})`;
+
+    let dayCourtRev = 0, dayExtraRev = 0, dayBookedSlots = 0, dayPlaying = 0, dayPaid = 0, dayUnpaid = 0;
+
+    [1, 2].forEach(court => {
+      const tbody = document.getElementById(`court${court}DailyBody`);
+      let cSlots = 0, cRev = 0;
+      let html = "";
+
+      TIME_SLOTS.forEach(slot => {
+        const key = `${dateStr}_${court}_${slot.id}`;
+        const bk = bookingsDB[key];
+        const rowClick = isViewOnly ? "" : `onclick="openBookingModal('${dateStr}', ${court}, ${slot.id})"`;
+
+        if (!bk) {
+          html += `
+            <tr class="slot-row" ${rowClick}>
+              <td style="font-weight:700">${slot.label}</td>
+              <td style="color:#b45309; font-weight:600">${slot.stdPrice}k</td>
+              <td style="color:#94a3b8; font-style:italic">${isViewOnly ? "Còn trống" : "+ Chạm để đặt sân"}</td>
+              ${isViewOnly ? "" : "<td>-</td>"}
+              <td><span style="color:#16a34a; font-size:12px; font-weight:600">⚪ Trống</span></td>
+            </tr>`;
+        } else {
+          const cPrice = Number(bk.courtPrice || 0);
+          const ePrice = Number(bk.extraPrice || 0);
+          const total = cPrice + ePrice;
+          cSlots++;
+          cRev += total;
+          dayCourtRev += cPrice;
+          dayExtraRev += ePrice;
+          dayBookedSlots++;
+          if (bk.status === "playing") dayPlaying++;
+          if (bk.status === "paid") dayPaid += total; else dayUnpaid += total;
+
+          const phoneHtml = (!isViewOnly && bk.phone)
+            ? `<a class="call-link" href="tel:${escapeHtml(bk.phone)}" onclick="event.stopPropagation()">📞 ${escapeHtml(bk.phone)}</a>`
+            : "";
+
+          html += `
+            <tr class="slot-row st-${bk.status}" ${rowClick}>
+              <td style="font-weight:700">${slot.label}</td>
+              <td style="font-weight:700">${cPrice}k</td>
+              <td>
+                <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+                  ${typeBadge(bk.type)}
+                  <strong>${isViewOnly ? "Đã có khách đặt" : escapeHtml(bk.customer)}</strong>
+                  ${phoneHtml}
+                </div>
+                ${(!isViewOnly && bk.note) ? `<div style="font-size:11.5px; opacity:0.85; margin-top:2px;">📝 ${escapeHtml(bk.note)}${ePrice > 0 ? ` (+DV ${ePrice}k)` : ""}</div>` : ""}
+              </td>
+              ${isViewOnly ? "" : `<td style="font-weight:800">${total}k</td>`}
+              <td><span style="font-size:12px; font-weight:700">${statusLabel(bk.status)}</span></td>
+            </tr>`;
+        }
+      });
+
+      tbody.innerHTML = html;
+      document.getElementById(`court${court}DaySummary`).textContent =
+        isViewOnly ? `${13 - cSlots} ca trống` : `${cSlots}/13 ca | ${cRev.toLocaleString()}k`;
+    });
+
+    const totalDay = dayCourtRev + dayExtraRev;
+    document.getElementById("kpiDayRev").textContent = `${totalDay.toLocaleString()}k (${(totalDay * 1000).toLocaleString()}đ)`;
+    document.getElementById("kpiDaySub").textContent = `Tiền sân: ${dayCourtRev}k | Nước & Vợt: ${dayExtraRev}k`;
+    document.getElementById("kpiDaySlots").textContent = `${dayBookedSlots} / 26 ca đã đặt`;
+    document.getElementById("kpiDayPlaying").textContent = `Còn trống: ${26 - dayBookedSlots} ca | Đang đánh: ${dayPlaying}`;
+    document.getElementById("kpiPaidStatus").textContent = `${dayPaid}k / ${dayUnpaid}k`;
+  }
+
+  function renderMonthlyMatrix() {
+    const ym = document.getElementById("monthSelector").value;
+    const [year, month] = ym.split("-").map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    let mRev1 = 0, mRev2 = 0, mSlots1 = 0, mSlots2 = 0;
+
+    [1, 2].forEach(court => {
+      const table = document.getElementById(`matrixTable${court}`);
+      document.getElementById(`matrixTitle${court}`).textContent =
+        `LỊCH ĐÁNH PICKLEBALL SÂN ${court} (THÁNG ${month}-${year})`;
+
+      let h1 = `<tr><th rowspan="2">Giá</th><th style="min-width:68px">Ngày</th>`;
+      let h2 = `<tr><th>Giờ</th>`;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dow = getShortDayVN(year, month, d);
+        const isWk = dow === "T7" || dow === "CN";
+        h1 += `<th class="${isWk ? 'weekend' : ''}">${d}</th>`;
+        h2 += `<th class="${isWk ? 'weekend' : ''}">${dow}</th>`;
+      }
+      if (!isViewOnly) h1 += `<th rowspan="2">Ca</th><th rowspan="2">Tiền</th>`;
+      h1 += `</tr>`;
+      h2 += `</tr>`;
+
+      let bodyHtml = "";
+      let courtTotalSlots = 0, courtTotalRev = 0;
+      const dailyCounts = new Array(daysInMonth + 1).fill(0);
+
+      TIME_SLOTS.forEach(slot => {
+        let rowSlots = 0, rowRev = 0, cellsHtml = "";
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          const key = `${dateStr}_${court}_${slot.id}`;
+          const bk = bookingsDB[key];
+          const clickAttr = isViewOnly ? "" : `onclick="openBookingModal('${dateStr}', ${court}, ${slot.id})"`;
+          if (!bk) {
+            cellsHtml += `<td class="cell-slot" ${clickAttr}></td>`;
+          } else {
+            rowSlots++;
+            dailyCounts[d]++;
+            const tot = Number(bk.courtPrice || 0) + Number(bk.extraPrice || 0);
+            rowRev += tot;
+            const prefix = bk.type === "coach_tx" ? "T-" : (bk.type === "coach_ktx" ? "TK-" : "");
+            const displayTxt = isViewOnly ? "Đã đặt" : (prefix + bk.customer);
+            cellsHtml += `<td class="cell-slot st-${bk.status}" ${clickAttr} title="${escapeHtml(displayTxt)}">${escapeHtml(displayTxt)}</td>`;
+          }
+        }
+        courtTotalSlots += rowSlots;
+        courtTotalRev += rowRev;
+
+        bodyHtml += `
+          <tr>
+            <td class="slot-price">${slot.stdPrice}k</td>
+            <td class="slot-name">${slot.label}</td>
+            ${cellsHtml}
+            ${isViewOnly ? "" : `<td class="sum-col">${rowSlots}</td><td class="sum-col">${rowRev}k</td>`}
+          </tr>`;
+      });
+
+      let footCells = "";
+      for (let d = 1; d <= daysInMonth; d++) {
+        footCells += `<td style="background:#f1f5f9; font-weight:700">${dailyCounts[d] || ""}</td>`;
+      }
+      bodyHtml += `
+        <tr>
+          <td colspan="2" style="background:#e2e8f0; font-weight:700">Số ca/ngày</td>
+          ${footCells}
+          ${isViewOnly ? "" : `<td class="sum-col">${courtTotalSlots}</td><td class="sum-col">${courtTotalRev.toLocaleString()}k</td>`}
+        </tr>`;
+
+      table.innerHTML = `<thead>${h1}${h2}</thead><tbody>${bodyHtml}</tbody>`;
+      document.getElementById(`matrixSum${court}`).textContent =
+        `Tổng Sân ${court}: ${courtTotalSlots} ca | ${courtTotalRev.toLocaleString()}k`;
+
+      if (court === 1) { mRev1 = courtTotalRev; mSlots1 = courtTotalSlots; }
+      else { mRev2 = courtTotalRev; mSlots2 = courtTotalSlots; }
+    });
+
+    const totalMonth = mRev1 + mRev2;
+    document.getElementById("kpiMonthRev").textContent = `${totalMonth.toLocaleString()}k (${(totalMonth * 1000).toLocaleString()}đ)`;
+    document.getElementById("kpiMonthSub").textContent = `Sân 1: ${mRev1.toLocaleString()}k | Sân 2: ${mRev2.toLocaleString()}k`;
+  }
+
+  function openBookingModal(dateStr, court, slotId) {
+    if (isViewOnly) return;
+    currentEdit = { dateStr, court, slotId };
+    const slot = TIME_SLOTS[slotId];
+    const [y, m, d] = dateStr.split("-");
+    document.getElementById("modalTitle").textContent =
+      `Sân ${court} • ${slot.label} • ${d}/${m}/${y}`;
+
+    const key = `${dateStr}_${court}_${slotId}`;
+    const existing = bookingsDB[key];
+
+    if (existing) {
+      document.getElementById("fCustomer").value = existing.customer || "";
+      document.getElementById("fPhone").value = existing.phone || "";
+      document.getElementById("fType").value = existing.type || "regular";
+      document.getElementById("fStatus").value = existing.status || "confirmed";
+      document.getElementById("fCourtPrice").value = existing.courtPrice ?? getDefaultPrice(slotId, existing.type || "regular");
+      document.getElementById("fExtraPrice").value = existing.extraPrice ?? 0;
+      document.getElementById("fNote").value = existing.note || "";
+    } else {
+      document.getElementById("fCustomer").value = "";
+      document.getElementById("fPhone").value = "";
+      document.getElementById("fType").value = "regular";
+      document.getElementById("fStatus").value = "confirmed";
+      document.getElementById("fCourtPrice").value = getDefaultPrice(slotId, "regular");
+      document.getElementById("fExtraPrice").value = 0;
+      document.getElementById("fNote").value = "";
+    }
+
+    updateModalTotal();
+    document.getElementById("bookingModal").classList.add("open");
+  }
+
+  function closeModal() {
+    document.getElementById("bookingModal").classList.remove("open");
+  }
+
+  function recalcModalPrice() {
+    const type = document.getElementById("fType").value;
+    document.getElementById("fCourtPrice").value = getDefaultPrice(currentEdit.slotId, type);
+    updateModalTotal();
+  }
+
+  function addQuickExtra(amount, itemName) {
+    const extraInput = document.getElementById("fExtraPrice");
+    extraInput.value = Number(extraInput.value || 0) + amount;
+    const noteInput = document.getElementById("fNote");
+    noteInput.value = noteInput.value ? `${noteInput.value}, +${itemName}` : `+${itemName}`;
+    updateModalTotal();
+  }
+
+  function resetQuickExtra() {
+    document.getElementById("fExtraPrice").value = 0;
+    updateModalTotal();
+  }
+
+  function updateModalTotal() {
+    const c = Number(document.getElementById("fCourtPrice").value || 0);
+    const e = Number(document.getElementById("fExtraPrice").value || 0);
+    const tot = c + e;
+    document.getElementById("modalFormulaText").textContent = `Tiền sân: ${c}k + Dịch vụ: ${e}k`;
+    document.getElementById("modalTotalAmt").textContent = `${tot}k (${(tot * 1000).toLocaleString()}đ)`;
+  }
+
+  function saveModalBooking() {
+    const customer = document.getElementById("fCustomer").value.trim();
+    if (!customer) {
+      alert("Vui lòng nhập Tên khách hàng hoặc Thầy dạy!");
+      return;
+    }
+    const key = `${currentEdit.dateStr}_${currentEdit.court}_${currentEdit.slotId}`;
+    bookingsDB[key] = {
+      customer,
+      phone: document.getElementById("fPhone").value.trim(),
+      type: document.getElementById("fType").value,
+      status: document.getElementById("fStatus").value,
+      courtPrice: Number(document.getElementById("fCourtPrice").value || 0),
+      extraPrice: Number(document.getElementById("fExtraPrice").value || 0),
+      note: document.getElementById("fNote").value.trim()
+    };
+    pushToServer();
+    closeModal();
+  }
+
+  function deleteCurrentBooking() {
+    const key = `${currentEdit.dateStr}_${currentEdit.court}_${currentEdit.slotId}`;
+    if (bookingsDB[key]) {
+      delete bookingsDB[key];
+      pushToServer();
+    }
+    closeModal();
+  }
+
+  function applyRecurringBooking() {
+    const ym = document.getElementById("recMonth").value;
+    const court = Number(document.getElementById("recCourt").value);
+    const customer = document.getElementById("recCustomer").value.trim();
+    const phone = document.getElementById("recPhone").value.trim();
+    const type = document.getElementById("recType").value;
+    const status = document.getElementById("recStatus").value;
+
+    if (!customer) {
+      alert("Vui lòng nhập Tên Khách / CLB / Thầy dạy!");
+      return;
+    }
+
+    const daysChecked = [...document.querySelectorAll("#recDaysGroup input:checked")].map(i => Number(i.value));
+    const slotsChecked = [...document.querySelectorAll("#recSlotsGroup input:checked")].map(i => Number(i.value));
+
+    if (daysChecked.length === 0 || slotsChecked.length === 0) {
+      alert("Vui lòng chọn ít nhất 1 Thứ trong tuần và 1 Khung giờ!");
+      return;
+    }
+
+    const [year, month] = ym.split("-").map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    let countCreated = 0;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dt = new Date(year, month - 1, d);
+      if (daysChecked.includes(dt.getDay())) {
+        const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        slotsChecked.forEach(slotId => {
+          const key = `${dateStr}_${court}_${slotId}`;
+          bookingsDB[key] = {
+            customer,
+            phone,
+            type,
+            status,
+            courtPrice: getDefaultPrice(slotId, type),
+            extraPrice: 0,
+            note: "Lịch cố định tháng"
+          };
+          countCreated++;
+        });
+      }
+    }
+
+    pushToServer();
+    document.getElementById("monthSelector").value = ym;
+    switchTab("monthly");
+    alert(`Đã tạo ${countCreated} ca đặt sân cố định cho "${customer}" trong tháng ${month}/${year}!`);
+  }
+
+  function renderQuarterReport() {
+    const months = ["2026-10", "2026-11", "2026-12"];
+    let html = `<table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <thead><tr style="background:#e2e8f0;"><th style="padding:6px; border:1px solid #cbd5e1;">Tháng</th><th style="padding:6px; border:1px solid #cbd5e1;">Sân 1</th><th style="padding:6px; border:1px solid #cbd5e1;">Sân 2</th><th style="padding:6px; border:1px solid #cbd5e1;">Tổng Cộng</th></tr></thead><tbody>`;
+    months.forEach(ym => {
+      let r1 = 0, r2 = 0, c1 = 0, c2 = 0;
+      Object.keys(bookingsDB).forEach(k => {
+        if (k.startsWith(ym)) {
+          const court = Number(k.split("_")[1]);
+          const bk = bookingsDB[k];
+          const tot = Number(bk.courtPrice || 0) + Number(bk.extraPrice || 0);
+          if (court === 1) { r1 += tot; c1++; } else { r2 += tot; c2++; }
+        }
+      });
+      html += `<tr>
+        <td style="padding:6px; border:1px solid #cbd5e1; font-weight:700">${ym}</td>
+        <td style="padding:6px; border:1px solid #cbd5e1;">${c1} ca (${r1.toLocaleString()}k)</td>
+        <td style="padding:6px; border:1px solid #cbd5e1;">${c2} ca (${r2.toLocaleString()}k)</td>
+        <td style="padding:6px; border:1px solid #cbd5e1; font-weight:800; color:#0f766e">${(r1 + r2).toLocaleString()}k</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    document.getElementById("quarterReportBox").innerHTML = html;
+  }
+
+  function openShareModal() {
+    let baseUrl = window.location.origin + window.location.pathname;
+    if (serverInfo && serverInfo.publicUrl) {
+      baseUrl = serverInfo.publicUrl;
+    } else if (serverInfo && serverInfo.localIp) {
+      baseUrl = `http://${serverInfo.localIp}:${serverInfo.port}`;
+    } else if (!baseUrl.startsWith("http")) {
+      baseUrl = "http://192.168.1.5:3000";
+    }
+    const adminUrl = baseUrl;
+    const viewUrl = baseUrl + (baseUrl.includes("?") ? "&mode=view" : "?mode=view");
+    document.getElementById("shareAdminUrl").value = adminUrl;
+    document.getElementById("shareViewUrl").value = viewUrl;
+    document.getElementById("qrAdminImg").src =
+      `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(adminUrl)}`;
+    document.getElementById("shareModal").classList.add("open");
+  }
+
+  function closeShareModal() {
+    document.getElementById("shareModal").classList.remove("open");
+  }
+
+  function saveCloudApiUrl() {
+    const val = document.getElementById("cloudApiInput").value.trim();
+    localStorage.setItem(CLOUD_URL_KEY, val);
+    pullFromServer();
+    alert("Đã lưu cấu hình đồng bộ!");
+  }
+
+  function exportMonthlyExcel() {
+    const ym = document.getElementById("monthSelector").value;
+    const t1 = document.getElementById("matrixTable1").outerHTML;
+    const t2 = document.getElementById("matrixTable2").outerHTML;
+    const content = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head><meta charset="UTF-8"></head>
+      <body>
+        <h3>LỊCH ĐÁNH PICKLEBALL SÂN 1 (${ym})</h3>${t1}<br/>
+        <h3>LỊCH ĐÁNH PICKLEBALL SÂN 2 (${ym})</h3>${t2}
+      </body></html>`;
+    const blob = new Blob([content], { type: "application/vnd.ms-excel" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `Lich_San_Pickleball_${ym}.xls`;
+    a.click();
+  }
+
+  function exportBackupJson() {
+    const blob = new Blob([JSON.stringify(bookingsDB, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `SaoLuu_SanPickleball_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+  }
+
+  function importBackupJson(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        bookingsDB = JSON.parse(e.target.result);
+        pushToServer();
+        alert("Đã khôi phục dữ liệu thành công!");
+      } catch (err) {
+        alert("File không hợp lệ!");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function clearAllData() {
+    if (confirm("Xóa toàn bộ dữ liệu mẫu để bắt đầu nhập mới?")) {
+      bookingsDB = {};
+      pushToServer();
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str || "").replace(/[&<>"']/g, m => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[m]));
+  }
+
+  function refreshAllViews() {
+    renderDailyView();
+    renderMonthlyMatrix();
+    renderQuarterReport();
+  }
+
+  window.addEventListener("DOMContentLoaded", initApp);
+</script>
+</body>
+</html>
