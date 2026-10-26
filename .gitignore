@@ -1,0 +1,4 @@
+*.xlsx
+*.bat
+node_modules/
+.vercel/
