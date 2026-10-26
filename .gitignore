@@ -1,4 +1,6 @@
 *.xlsx
 *.bat
+server.js
+du_lieu_san.json
 node_modules/
 .vercel/
